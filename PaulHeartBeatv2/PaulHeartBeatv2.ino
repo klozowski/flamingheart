@@ -5,22 +5,22 @@
 */
 
 #define RUNNING_AVERAGE_SIZE 8 //the number of samples to include in the running average
-#define HB_AVERAGE_SIZE 3 //number of samples to include in the heartbeat average
+#define HB_AVERAGE_SIZE 5 //number of samples to include in the heartbeat average
 #define SAMPLE_FREQUENCY_DIVISOR 50 // the interrupt clock is set to 500 times by default, I found it more straightforward to sample only ten times a second
 #define PULSE_PIN 0 // Pulse Sensor purple wire connected to analog pin 0
 #define DEBUG_PLOT_RAW false //turn this on to check a debug plot of the raw signal using the serial plotter, you should turn all other debugging off to do so
 #define DEBUG_PLOT_FILTERED false //turn this on to check a debug plot of the filtered signal the divisor using the serial plotter, you should turn all other debugging off to do so
-#define DEBUG_PLOT_DIVISOR true //turn this on to check a debug plot of the heartbeat after the divisor using the serial plotter, you should turn all other debugging off to do so
+#define DEBUG_PLOT_DIVISOR false //turn this on to check a debug plot of the heartbeat after the divisor using the serial plotter, you should turn all other debugging off to do so
 #define DEBUG_PULSE false // turn this on to debug when we read pulses
-#define DEBUG_HEARTBEAT_LOSTFOUND false //turn this on to debug when we find and lose the heartbeat;
-#define DEBUG_HEARTBEAT false //turn this on to print debug text on the heartbeat itself
-#define MIN_PULSE_HEIGHT 150 //the minimum acceptable pulse height to consider a pulse
+#define DEBUG_HEARTBEAT_LOSTFOUND true //turn this on to debug when we find and lose the heartbeat;
+#define DEBUG_HEARTBEAT true //turn this on to print debug text on the heartbeat itself
+#define MIN_PULSE_HEIGHT 200 //the minimum acceptable pulse height to consider a pulse
 #define MAX_PULSE_HEIGHT 700 // maximum acceptable pulse height;
 #define MIN_HEARTBEAT 65 // minimum acceptable heartbeat
-#define MAX_HEARTBEAT 180 //maximum acceptable heartbeat
+#define MAX_HEARTBEAT 140 //maximum acceptable heartbeat
 #define HEARTBEAT_EVALUATE_FREQUENCY 100 //how often to evaluate heartbeat on off
-#define HEARTBEAT_EVALUATE_DURATION 3000 //duration of evaluation of heartbeat on off
-#define NUM_HEARTBEAT_TIMES 10 // number of heartbeats to keep in array
+#define HEARTBEAT_EVALUATE_DURATION 3500 //duration of evaluation of heartbeat on off
+#define NUM_HEARTBEAT_TIMES 20 // number of heartbeats to keep in array
 #define PRIMARY_BEAT_RELAY_PIN 4 // primary beat pin for evil mad scientist relay shield
 #define SECONDARY_BEAT_RELAY_PIN 8 // secondary beat pin for evil mad scientist relay shield
 #define TRIGGER_RELAYS true // do we want to actually trigger relays?
@@ -121,6 +121,7 @@ void evaluateHeartbeat() {
     lastSwitchTime = lastEvaluateTime;
     heartbeatTimesIndex = 0;
     avgHBDuration = hbRunningAverage(0,true);
+    if (avgHBDuration < (60000/MAX_HEARTBEAT)) avgHBDuration = (60000/MAX_HEARTBEAT);
   }
   pulseCount = 0;
  
