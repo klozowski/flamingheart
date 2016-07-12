@@ -5,16 +5,19 @@
 */
 
 #define RUNNING_AVERAGE_SIZE 8 //the number of samples to include in the running average
-#define HB_AVERAGE_SIZE 4 //number of samples to include in the heartbeat average
+#define HB_AVERAGE_SIZE 3 //number of samples to include in the heartbeat average
 #define SAMPLE_FREQUENCY_DIVISOR 50 // the interrupt clock is set to 500 times by default, I found it more straightforward to sample only ten times a second
 #define PULSE_PIN 0 // Pulse Sensor purple wire connected to analog pin 0
-#define DEBUG_PLOT false //turn this on to check a debug plot of the heartbeat using the serial plotter, you should turn all other debugging off to do so
+#define DEBUG_PLOT_RAW false //turn this on to check a debug plot of the raw signal using the serial plotter, you should turn all other debugging off to do so
+#define DEBUG_PLOT_FILTERED false //turn this on to check a debug plot of the filtered signal the divisor using the serial plotter, you should turn all other debugging off to do so
+#define DEBUG_PLOT_DIVISOR true //turn this on to check a debug plot of the heartbeat after the divisor using the serial plotter, you should turn all other debugging off to do so
 #define DEBUG_PULSE false // turn this on to debug when we read pulses
-#define DEBUG_HEARTBEAT_LOSTFOUND true //turn this on to debug when we find and lose the heartbeat;
-#define DEBUG_HEARTBEAT true //turn this on to print debug text on the heartbeat itself
-#define MIN_PULSE_HEIGHT 200 //the minimum acceptable pulse height to consider a pulse
+#define DEBUG_HEARTBEAT_LOSTFOUND false //turn this on to debug when we find and lose the heartbeat;
+#define DEBUG_HEARTBEAT false //turn this on to print debug text on the heartbeat itself
+#define MIN_PULSE_HEIGHT 150 //the minimum acceptable pulse height to consider a pulse
 #define MAX_PULSE_HEIGHT 700 // maximum acceptable pulse height;
-#define MIN_HEARTBEAT 50 // minimum acceptable heartbeat
+#define MIN_HEARTBEAT 65 // minimum acceptable heartbeat
+#define MAX_HEARTBEAT 180 //maximum acceptable heartbeat
 #define HEARTBEAT_EVALUATE_FREQUENCY 100 //how often to evaluate heartbeat on off
 #define HEARTBEAT_EVALUATE_DURATION 3000 //duration of evaluation of heartbeat on off
 #define NUM_HEARTBEAT_TIMES 10 // number of heartbeats to keep in array
@@ -106,7 +109,7 @@ void evaluateHeartbeat() {
   for (int i=0;i<NUM_HEARTBEAT_TIMES;i++) {
     if ((lastEvaluateTime - heartbeatTimes[i]) < HEARTBEAT_EVALUATE_DURATION) pulseCount++;
   }
-  bool heartbeatValid = (pulseCount >= (((float)HEARTBEAT_EVALUATE_DURATION * (float)MIN_HEARTBEAT) / 60000.0));
+  bool heartbeatValid = ((pulseCount >= (((float)HEARTBEAT_EVALUATE_DURATION * (float)MIN_HEARTBEAT) / 60000.0)) && (pulseCount <= (((float)HEARTBEAT_EVALUATE_DURATION * (float)MAX_HEARTBEAT) / 60000.0)));
   if (heartbeatValid && !hasHeartbeat && ((lastEvaluateTime - lastSwitchTime) > (HEARTBEAT_EVALUATE_DURATION+1000))) {
     hasHeartbeat = true;
     if (DEBUG_HEARTBEAT_LOSTFOUND) Serial.println("FOUND HEARTBEAT");
@@ -135,6 +138,8 @@ ISR(TIMER2_COMPA_vect) {
   cli();                               
   rawSignal = analogRead(PULSE_PIN);
   filteredSignal = filterRunningAverage(rawSignal);
+  if (DEBUG_PLOT_RAW) Serial.println(rawSignal);
+  if (DEBUG_PLOT_FILTERED) Serial.println(filteredSignal);
   signalFrequencyCounter++;
   if (signalFrequencyCounter == SAMPLE_FREQUENCY_DIVISOR) {
     lastSignal = thisSignal; 
@@ -184,7 +189,7 @@ int hbRunningAverage(long M, bool avReset) {
 }
 
 void recordSignal() {
-  if (DEBUG_PLOT) Serial.println(thisSignal);
+  if (DEBUG_PLOT_DIVISOR) Serial.println(thisSignal);
   int signalHeight = thisSignal - lastSignal;
   if ((signalHeight >= MIN_PULSE_HEIGHT) && (signalHeight <= MAX_PULSE_HEIGHT)) {
     lastPulseTime = thisPulseTime;
